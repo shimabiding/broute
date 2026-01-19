@@ -53,3 +53,29 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# ビルド成果物（実行ファイルやバイナリ）
+bin/
+obj/
+
+# Visual Studio ユーザー設定ファイル
+.vs/
+*.user
+*.suo
+
+# .NET のデバッグ・プロファイリング関連
+*.pdb
+*.ilk
+*.ncb
+
+# NuGet パッケージ
+packages/
+*.nupkg
+project.lock.json
+
+# ログファイル
+*.log
+
+# その他不要なファイル
+Thumbs.db
+Desktop.ini
