@@ -1,0 +1,8 @@
+connect '/C=3'
+setbaud 115200
+
+waitregex '^r\r'
+sendln 'soudayo'
+
+waitln 'nani'
+end

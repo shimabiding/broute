@@ -1,0 +1,106 @@
+pwd = ''
+bid = ''
+
+if 0 == 1 then
+inputbox 'pwd' 'please pwd'
+pwd = inputstr
+inputbox 'bid' 'please bid'
+bid = inputstr
+endif
+
+connect '/C=3'
+setbaud 115200
+
+fileopen fh 'dokoda.txt' 1
+
+
+while 1 == 1
+    timeout = 10
+    waitregex '^r\r'
+    if result == 0 then
+        call alive
+    else
+        call instantPower
+    endif
+endwhile
+
+end
+
+
+:join
+
+/*
+sendln 'SKSETPWD C ' pwd
+sendln 'SKSETBID' bid
+
+strdim scanRes 5
+scanRes[0] = '  Channnel:'
+scanRes[1] = '  Channnel Page:'
+scanRes[2] = '  Pan ID:'
+scanRes[3] = '  Addr:'
+scanRes[4] = '  PairID:'
+
+while a?
+    sendln 'SKSCAN 2 FFFFFFFF 6'
+    
+    waitln 'Channnel:'
+    if result == 0 then
+        messagebox 'No RESPONCE Channel' 'ERROR'
+        end
+    endif
+    Channel = inputstr
+
+    for i 0 4
+        waitln scanRes[i]
+        if result == 0 then
+            strconcat scanRes[i] 'No Res'
+            messagebox scanRes[i] 'ERROR'
+            end
+        endif
+        strtrim inputstr scanRes[i]
+        scanRes[i] = inputstr
+    next
+endwhile
+
+sendln 'SKLL64 ' scanRes[3]
+waitln ':'
+if result == 1 scanRes[3] = inputstr
+
+sendln 'SKSREG S2 ' scanRes[0]
+sendln 'SKSREG S3 ' scanRes[2]
+sendln 'SKJOIN ' scanRes[3]
+
+E25 = 1
+while E25 == 1
+    waitln 'EVENT24' 'EVENT25'
+    if result == 1 continue
+    if result == 2 E25 = 0
+endwhile
+*/
+
+sendln 'SKSREG S1'
+waitln 'ESREG'
+if result = 0 then
+    messagebox 'No Responce SKSREG' 'ERROR'
+    end
+endif
+ip = inputstr
+call toIPv6
+return
+
+:alive
+call join
+;isAlive OK
+;SKPING 0 
+;recv / 30 min
+return
+
+:instantPower
+sendln 'adfs'
+;waitln 'E05'
+messagebox inputstr 'insta'
+getdate t "%Y-%m-%d %H:%M:%S"
+strconcat t ' new\r\n'
+fileseek fh 0 2
+filewriteln fh t
+return
