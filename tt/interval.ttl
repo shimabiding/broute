@@ -42,13 +42,6 @@ scanRes[4] = '  PairID:'
 
 while a?
     sendln 'SKSCAN 2 FFFFFFFF 6'
-    
-    waitln 'Channnel:'
-    if result == 0 then
-        messagebox 'No RESPONCE Channel' 'ERROR'
-        end
-    endif
-    Channel = inputstr
 
     for i 0 4
         waitln scanRes[i]
@@ -80,13 +73,11 @@ endwhile
 
 sendln 'SKSREG S1'
 waitln 'ESREG'
-if result = 0 then
-    messagebox 'No Responce SKSREG' 'ERROR'
-    end
-endif
 ip = inputstr
-call toIPv6
+messagebox ip 'SKSREG S1'
 return
+
+
 
 :alive
 call join
