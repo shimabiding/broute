@@ -1,38 +1,39 @@
 pwd = ''
 bid = ''
 
+aliveInterval = 10 ;econet
+
 if 0 == 1 then
 inputbox 'pwd' 'please pwd'
 pwd = inputstr
 inputbox 'bid' 'please bid'
 bid = inputstr
+sendln 'SKSETPWD C ' pwd
+sendln 'SKSETRBID' bid
 endif
 
-connect '/C=3'
+connect '/C=5'
 setbaud 115200
 
 fileopen fh 'dokoda.txt' 1
 
 
 while 1 == 1
-    timeout = 10
+    timeout = aliveInterval
     waitregex '^r\r'
     if result == 0 then
-        call alive
+        call Alive
     else
-        call instantPower
+        call InstantPower
     endif
 endwhile
 
 end
 
 
-:join
+:Join
 
 /*
-sendln 'SKSETPWD C ' pwd
-sendln 'SKSETBID' bid
-
 strdim scanRes 5
 scanRes[0] = '  Channnel:'
 scanRes[1] = '  Channnel Page:'
@@ -41,7 +42,7 @@ scanRes[3] = '  Addr:'
 scanRes[4] = '  PairID:'
 
 while a?
-    sendln 'SKSCAN 2 FFFFFFFF 6'
+    sendln 'SKSCAN 3 FFFFFFFF 6'
 
     for i 0 4
         waitln scanRes[i]
@@ -71,22 +72,39 @@ while E25 == 1
 endwhile
 */
 
-sendln 'SKSREG S1'
-waitln 'ESREG'
-ip = inputstr
-messagebox ip 'SKSREG S1'
 return
 
 
 
-:alive
-call join
+:Alive
+;call join
+;if
+; sendln 'SKREJOIN'
 ;isAlive OK
 ;SKPING 0 
 ;recv / 30 min
 return
 
-:instantPower
+:Recive
+waitln 'ERXUDP' 'EVENT' 'EVENT29'
+if result == 0 call a
+if result == 1 call b
+if result == 2 call c
+return
+
+:ERXUDP
+strtrim
+return
+
+:InstantPower
+frame = '1081000005FF010288016201E700'
+lenFrame = strlen frame
+lenFlame = lenFrame / 2
+
+sendln 'SKSENDTO 1 ' scanRes[3] ' 0E1A 1 0 ' lenFrame
+send $10$81$00$00$05$FF$01$02$88$01$62$01$E7$00
+waitln 'E7'
+waitln'asdijfoias'
 sendln 'adfs'
 ;waitln 'E05'
 messagebox inputstr 'insta'
