@@ -1,26 +1,21 @@
-;Terminal設定がCR＋LFになっているか確認してね
-connect '/C=5'
-setbaud 115200
-
 pwd = ''
 bid = ''
 
 aliveInterval = 10 ;econet
 
-
+if 0 == 1 then
 inputbox 'pwd' 'please pwd'
 pwd = inputstr
-sendln 'SKSETPWD C ' pwd
-waitln 'OK'
 inputbox 'bid' 'please bid'
 bid = inputstr
+sendln 'SKSETPWD C ' pwd
 sendln 'SKSETRBID' bid
-waitln 'OK'
+endif
 
+connect '/C=5'
+setbaud 115200
 
 fileopen fh 'dokoda.txt' 1
-
-call Join
 
 
 while 1 == 1
@@ -36,7 +31,6 @@ endwhile
 end
 
 
-
 :Join
 
 /*
@@ -45,8 +39,9 @@ scanRes[0] = '  Channnel:'
 scanRes[1] = '  Channnel Page:'
 scanRes[2] = '  Pan ID:'
 scanRes[3] = '  Addr:'
+scanRes[4] = '  PairID:'
 
-do
+while a?
     sendln 'SKSCAN 3 FFFFFFFF 6'
 
     for i 0 4
@@ -59,7 +54,7 @@ do
         strtrim inputstr scanRes[i]
         scanRes[i] = inputstr
     next
-loop while scanRes[3] == '  Addr:'
+endwhile
 
 sendln 'SKLL64 ' scanRes[3]
 waitln ':'
@@ -75,13 +70,14 @@ while E25 == 1
     if result == 1 continue
     if result == 2 E25 = 0
 endwhile
+*/
 
 return
 
 
 
 :Alive
-;SKREJOIN
+;call join
 ;if
 ; sendln 'SKREJOIN'
 ;isAlive OK
@@ -97,7 +93,7 @@ if result == 2 call c
 return
 
 :ERXUDP
-
+strtrim
 return
 
 :InstantPower
@@ -105,46 +101,11 @@ frame = '1081000005FF010288016201E700'
 lenFrame = strlen frame
 lenFlame = lenFrame / 2
 
-send 'SKSENDTO 1 ' scanRes[3] ' 0E1A 1 0 ' lenFrame
-
-for i 1 lenFrame
-    strcopy 2*i-1 2 chipFrame
-    dollers = '$'
-    strconcat dollers chipFrame
-    str2int bin dollers
-    sendbinary bin
-next
-sendln ''
-
-
-/*
-frame = '1081000005FF010288016201E700'
-
-; 文字数 → バイト数
-lenChar = strlen frame
-lenByte = lenChar / 2
-
-; 整数配列を確保（intdim しか使えない）
-intdim binArray lenByte
-
-; 16進文字列 → バイト配列
-for i 0 lenByte-1
-    pos = i * 2 + 1
-    strcopy frame pos 2 hex
-    str2int binArray[i] '$' + hex
-next
-
-; SKSENDTO（データ長はバイト数）
-send 'SKSENDTO 1 ' scanRes[3] ' 0E1A 1 0 ' lenByte
-
-; 一括バイナリ送信
-sendbinary binArray 0 lenByte
-*/
-
-
-;sendln $10$81$00$00$05$FF$01$02$88$01$62$01$E7$00
+sendln 'SKSENDTO 1 ' scanRes[3] ' 0E1A 1 0 ' lenFrame
+send $10$81$00$00$05$FF$01$02$88$01$62$01$E7$00
 waitln 'E7'
-waitln 'adfs'
+waitln'asdijfoias'
+sendln 'adfs'
 ;waitln 'E05'
 messagebox inputstr 'insta'
 getdate t "%Y-%m-%d %H:%M:%S"
