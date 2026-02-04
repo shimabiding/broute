@@ -1,0 +1,13 @@
+connect '/C=5'
+setbaud 115200
+
+sendln 'SKJOIN FE80:0000:0000:0000:3AE0:8E00:01B5:0890'
+sendln ''
+waitln 'as'
+
+sendln ''
+
+sendbinary 'SKSENDTO 1 FE80:0000:0000:0000:3AE0:8E00:01B5:0890 0E1A 1 0 000E ' $10 $81 $00 $00 $05 $FF $01 $02 $88 $01 $62 $01 $E7 $00
+sendln ''
+
+waitln 'adfs'
