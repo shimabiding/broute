@@ -1,9 +1,22 @@
 connect '/C=5'
 setbaud 115200
 
+
+SKSETPWD C pass
+
+SKSETRBID rbid
+
+SKSREG S2 3B
+
+SKSREG S3 0890
+
+:loop
 sendln 'SKJOIN FE80:0000:0000:0000:3AE0:8E00:01B5:0890'
 sendln ''
-waitln 'as'
+waitln 'EVENT 25' 'EVENT 24'
+if result == 1 sendln ''
+if result == 2 goto loop
+
 
 sendln ''
 
