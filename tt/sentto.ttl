@@ -26,7 +26,7 @@ strlen frame
 lenByte = result / 2
 
 ; 整数配列を確保（intdim しか使えない）
-intdim binArray lenByte
+;intdim binArray lenByte
 
 sprintf2 length '%04X' lenByte
 ; SKSENDTO（データ長はバイト数）
