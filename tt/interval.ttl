@@ -121,8 +121,8 @@ sendln ''
 frame = '1081000005FF010288016201E700'
 
 ; 文字数 → バイト数
-lenChar = strlen frame
-lenByte = lenChar / 2
+strlen frame
+lenByte = result / 2
 
 ; 整数配列を確保（intdim しか使えない）
 intdim binArray lenByte
@@ -134,11 +134,12 @@ for i 0 lenByte-1
     str2int binArray[i] '$' + hex
 next
 
+sprintf2 length '%04X' lenByte
 ; SKSENDTO（データ長はバイト数）
-send 'SKSENDTO 1 ' scanRes[3] ' 0E1A 1 0 ' lenByte
+send 'SKSENDTO 1 FE80:0000:0000:0000:3AE0:8E00:01B5:0890 0E1A 1 0 ' length
 
 ; 一括バイナリ送信
-sendbinary binArray 0 lenByte
+sendbinary binArray
 */
 
 
