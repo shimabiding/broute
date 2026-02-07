@@ -1,0 +1,125 @@
+;init.
+connect '/C=5' ;RL7023 StickのCOMポート番号を入力
+setbaud 115200 ;baudrateの数値の設定
+timeout = 0
+fileopen fh 'log.txt' 1
+
+aliveInterval = 900 ;SKPINGで疎通確認する頻度を[s]で指定
+rbid = 'rbid' ;32桁の数字
+pwd = 'pwd' ;何桁かの文字列
+addr = 'smame addr' ;接続先のipv6アドレス
+channel = ''
+panid = ''
+
+sendln 'SKSETPWD C ' pwd
+sendln 'SKSETRBID ' rbid
+
+sendln 'If you want to scan a your smame, you have to input **scan**'
+sendln 'If you had scaned, please input **f**'
+waitregex '^scan\r' 'f'
+if result == 1 goto Scan
+
+:mainLoop
+while 1 == 1
+    timeout = 0
+    sendln 'SKPING 0 ' addr
+    wait 'OK' 'EVENT 24' 'EVENT 29'
+    if result == 1 timeout = aliveInterval
+    if result == 2 goto Join
+    if result == 3 goto Event29
+
+    sendln 'When input r, Get instant power value'
+    waitregex '^r\r' 'EVENT 29' 'ERXUDP'
+    if result == 1 goto InstantPower
+    if result == 2 goto Event29
+    if result == 3 goto ERXUDPE7
+endwhile
+end
+
+
+
+:Scan
+sendln 'SKSCAN 3 FFFFFFFF 6 0'
+addr = '  Addr:'
+wait '  Addr:'
+strtrim inputstr addr
+sendln inputstr
+end
+return
+
+
+:InstantPower
+ESV = '62'
+EPC = 'E7'
+TID = '3304'
+goto StructFrame
+goto SkSendTo
+wait TID
+return
+
+
+:StructFrame
+frame = ''
+strconcat frame '10' ;EHD1 ECHONET Lite規格だぞ
+strconcat frame '81' ;規定電文形式ですぞ
+strconcat frame TID ;トランザクションID なんでもいい
+strconcat frame '05FF01' ;Send Echonet Object
+strconcat frame '028801' ;Receive Echonet Object
+strconcat frame ESV
+strconcat frame '01'
+strconcat frame EPC
+strconcat frame '00'
+return
+
+
+:SkSendTo
+; 文字数 → バイト数
+strlen frame
+lenByte = result / 2
+
+sprintf2 length '%04X' lenByte
+; SKSENDTO（データ長はバイト数）
+
+send 'SKSENDTO 1 ' addr ' 0E1A 1 0 ' length ' '
+
+; 16進文字列 → バイト配列
+for i 0 lenByte-1
+    pos = i * 2 + 1
+    strcopy frame pos 2 hex
+    strbin = '$'
+    strconcat strbin hex
+    str2int bin strbin
+    sendbinary bin
+next
+sendln ''
+return
+
+
+:ERXUDPE7
+strmatch inputstr '1081000002880105FF017201E704(\h{8})'
+if result == 0 return
+fileseek fh 0 2
+filewriteln fh groupmatchstr1
+return
+
+
+:Event29
+prevTO = timeout
+timeout = 130
+wait 'EVENT 25'
+timeout = prevTO
+if result == 1 return
+
+sendln 'SKREJOIN'
+wait 'OK' 'EVENT 24' ;たぶんOKではない EVENT 25でいいのか？
+if result == 2 goto Join
+return
+
+
+:Join
+sendln 'SKSREG S2 ' channel
+sendln 'SKSREG S3 ' panid
+sendln 'SKJOIN ' addr
+waitln 'EVENT 25' 'EVENT 24'
+if result == 2 goto Join
+return

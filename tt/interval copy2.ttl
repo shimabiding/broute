@@ -1,0 +1,118 @@
+;Terminal設定がCR＋LFになっているか確認してね
+connect '/C=5'
+setbaud 115200
+
+aliveInterval = 1000 ;econet
+
+addr = ''
+
+fileopen fh 'dokoda.txt' 1
+
+call Join
+
+
+while 1 == 1
+    timeout = aliveInterval
+    waitregex '^r\r'
+    if result == 0 then
+        call Alive
+    else
+        call InstantPower
+    endif
+endwhile
+
+end
+
+
+
+:Join
+sendln 'SKJOIN ' addr
+
+E25 = 1
+while E25 == 1
+    wait 'EVENT24' 'EVENT25'
+    if result == 1 continue
+    if result == 2 E25 = 0
+endwhile
+
+return
+
+
+:Alive
+SKPING
+;SKREJOIN
+;if
+; sendln 'SKREJOIN'
+;isAlive OK
+;SKPING 0 
+;recv / 30 min
+return
+
+
+:Recive
+waitln 'ERXUDP' 'EVENT' 'EVENT29'
+if result == 0 call a
+if result == 1 call b
+if result == 2 call c
+return
+
+
+:ERXUDP
+
+return
+
+
+:InstantPower
+frame = '1081000005FF010288016201E700'
+lenFrame = strlen frame
+lenFrame = lenFrame / 2
+sprintf2 hexFrame '%04X' lenFrame
+
+send 'SKSENDTO 1 ' addr ' 0E1A 1 0 ' hexFrame
+
+for i 1 lenFrame
+    strcopy 2*i-1 2 chipFrame
+    dollers = '$'
+    strconcat dollers chipFrame
+    str2int bin dollers
+    sendbinary bin
+next
+
+;sendbinary 'SKSENDTO 1 FE80:0000:0000:0000:3AE0:8E00:01B5:0890 0E1A 1 0 000E ' $10 $81 $00 $00 $05 $FF $01 $02 $88 $01 $62 $01 $E7 $00
+
+sendln ''
+
+/*
+frame = '1081000005FF010288016201E700'
+
+; 文字数 → バイト数
+lenChar = strlen frame
+lenByte = lenChar / 2
+
+; 整数配列を確保（intdim しか使えない）
+intdim binArray lenByte
+
+; 16進文字列 → バイト配列
+for i 0 lenByte-1
+    pos = i * 2 + 1
+    strcopy frame pos 2 hex
+    str2int binArray[i] '$' + hex
+next
+
+; SKSENDTO（データ長はバイト数）
+send 'SKSENDTO 1 ' scanRes[3] ' 0E1A 1 0 ' lenByte
+
+; 一括バイナリ送信
+sendbinary binArray 0 lenByte
+*/
+
+
+;sendln $10$81$00$00$05$FF$01$02$88$01$62$01$E7$00
+waitln 'E7'
+;waitln 'E05'
+messagebox inputstr 'insta'
+getdate t "%Y-%m-%d %H:%M:%S"
+strconcat t ' new\r\n'
+fileseek fh 0 2
+filewriteln fh t
+return
