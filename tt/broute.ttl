@@ -23,16 +23,17 @@ if result == 1 goto Scan
 while 1 == 1
     timeout = 0
     sendln 'SKPING 0 ' addr
-    wait 'OK' 'EVENT 24' 'EVENT 29'
+    wait 'OK' 'EVENT 24' 'EVENT 29' 'ERXUDP'
     if result == 1 timeout = aliveInterval
     if result == 2 goto Join
     if result == 3 goto Event29
+    if result == 4 goto ERXUDPEA
 
     sendln 'When input r, Get instant power value'
     waitregex '^r\r' 'EVENT 29' 'ERXUDP'
     if result == 1 goto InstantPower
     if result == 2 goto Event29
-    if result == 3 goto ERXUDPE7
+    if result == 3 goto ERXUDPEA
 endwhile
 end
 
@@ -49,12 +50,19 @@ return
 
 
 :InstantPower
+TID = '3304'
 ESV = '62'
 EPC = 'E7'
-TID = '3304'
+
+prevTO = timeout
+timeout = 130
 goto StructFrame
 goto SkSendTo
 wait TID
+timeout = prevTO
+strmatch inputstr '1081\h{4}02880105FF017201E704(\h{8})'
+sprintf2 p 'InstantPower: %d' groupmatchstr1
+sendln p
 return
 
 
@@ -65,10 +73,10 @@ strconcat frame '81' ;規定電文形式ですぞ
 strconcat frame TID ;トランザクションID なんでもいい
 strconcat frame '05FF01' ;Send Echonet Object
 strconcat frame '028801' ;Receive Echonet Object
-strconcat frame ESV
-strconcat frame '01'
-strconcat frame EPC
-strconcat frame '00'
+strconcat frame ESV ;読み取りなのか通知なのかとか
+strconcat frame '01' ;続くプロパティの数
+strconcat frame EPC ;プロパティ種別の設定 Appendix参照
+strconcat frame '00' ;読み取りなので続くバイトはないです 0です
 return
 
 
@@ -95,11 +103,25 @@ sendln ''
 return
 
 
-:ERXUDPE7
-strmatch inputstr '1081000002880105FF017201E704(\h{8})'
+:ERXUDPEA
+strmatch inputstr '1081\h{4}02880105FF017402EA0B(\h{4})(\h{2})(\h{2})(\h{2})(\h{2})(\h{2})(\h{8})'
 if result == 0 return
+res = ''
+sprintf2 d '%04d-' groupmatchstr1
+strconcat res d
+sprintf2 d '%02d-' groupmatchstr2
+strconcat res d
+sprintf2 d '%02d_T' groupmatchstr3
+strconcat res d
+sprintf2 d '%02d:' groupmatchstr4
+strconcat res d
+sprintf2 d '%02d:' groupmatchstr5
+strconcat res d
+sprintf2 d '%02d,' groupmatchstr6
+strconcat res d
+strconcat res groupmatchstr7
 fileseek fh 0 2
-filewriteln fh groupmatchstr1
+filewriteln fh res
 return
 
 
