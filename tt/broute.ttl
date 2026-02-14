@@ -4,43 +4,43 @@ setbaud 115200 ;baudrateの数値の設定
 timeout = 0
 fileopen fh 'log.txt' 1
 
+;ユーザーが設定する領域
 aliveInterval = 900 ;SKPINGで疎通確認する頻度を[s]で指定
 rbid = 'rbid' ;32桁の数字
 pwd = 'pwd' ;何桁かの文字列
 addr = 'smame addr' ;接続先のipv6アドレス
 channel = ''
 panid = ''
+;ユーザーが設定する領域ここまで
 
-sendln 'SKSETPWD C ' pwd
-sendln 'SKSETRBID ' rbid
+send 'SKSETPWD C ' pwd '\r\n'
+send 'SKSETRBID ' rbid '\r\n'
 
 sendln 'If you want to scan a your smame, you have to input **scan**'
 sendln 'If you had scaned, please input **f**'
-waitregex '^scan\r' 'f'
-if result == 1 goto Scan
+waitregex '^scan\n' '^f\n'
+if result == 1 call Scan
 
 :mainLoop
-while 1 == 1
-    timeout = 0
-    sendln 'SKPING 0 ' addr
-    wait 'OK' 'EVENT 24' 'EVENT 29' 'ERXUDP'
-    if result == 1 timeout = aliveInterval
-    if result == 2 goto Join
-    if result == 3 goto Event29
-    if result == 4 goto ERXUDPEA
-
-    sendln 'When input r, Get instant power value'
-    waitregex '^r\r' 'EVENT 29' 'ERXUDP'
-    if result == 1 goto InstantPower
-    if result == 2 goto Event29
-    if result == 3 goto ERXUDPEA
-endwhile
+timeout = 0
+send 'SKPING 0 ' addr '\r\n'
+wait 'OK' 'EVENT 24' 'EVENT 29' 'ERXUDP'
+if result == 1 timeout = aliveInterval
+if result == 2 call Join
+if result == 3 call Event29
+if result == 4 call ERXUDPEA
+sendln 'When input r, Get instant power value'
+waitregex '^r\r' 'EVENT 29' 'ERXUDP'
+if result == 1 call InstantPower
+if result == 2 call Event29
+if result == 3 call ERXUDPEA
+goto mainloop
 end
 
 
 
 :Scan
-sendln 'SKSCAN 3 FFFFFFFF 6 0'
+send 'SKSCAN 3 FFFFFFFF 6 0\r\n'
 addr = '  Addr:'
 wait '  Addr:'
 strtrim inputstr addr
@@ -56,8 +56,8 @@ EPC = 'E7'
 
 prevTO = timeout
 timeout = 130
-goto StructFrame
-goto SkSendTo
+call StructFrame
+call SkSendTo
 wait TID
 timeout = prevTO
 strmatch inputstr '1081\h{4}02880105FF017201E704(\h{8})'
@@ -85,10 +85,10 @@ return
 strlen frame
 lenByte = result / 2
 
-sprintf2 length '%04X' lenByte
+sprintf2 length '%04X ' lenByte
 ; SKSENDTO（データ長はバイト数）
 
-send 'SKSENDTO 1 ' addr ' 0E1A 1 0 ' length ' '
+send 'SKSENDTO 1 ' addr ' 0E1A 1 0 ' length 
 
 ; 16進文字列 → バイト配列
 for i 0 lenByte-1
@@ -99,7 +99,7 @@ for i 0 lenByte-1
     str2int bin strbin
     sendbinary bin
 next
-sendln ''
+send '\r\n'
 return
 
 
@@ -132,16 +132,16 @@ wait 'EVENT 25'
 timeout = prevTO
 if result == 1 return
 
-sendln 'SKREJOIN'
+send 'SKREJOIN\r\n'
 wait 'OK' 'EVENT 24' ;たぶんOKではない EVENT 25でいいのか？
-if result == 2 goto Join
+if result == 2 call Join
 return
 
 
 :Join
-sendln 'SKSREG S2 ' channel
-sendln 'SKSREG S3 ' panid
-sendln 'SKJOIN ' addr
+send 'SKSREG S2 ' channel '\r\n'
+send 'SKSREG S3 ' panid '\r\n'
+send 'SKJOIN ' addr '\r\n'
 waitln 'EVENT 25' 'EVENT 24'
 if result == 2 goto Join
 return

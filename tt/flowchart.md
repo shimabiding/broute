@@ -10,7 +10,7 @@ flowchart TD
     %% Scan
     F --> F1[SKSCAN実行]
     F1 --> F2[Addr取得]
-    F2 --> G
+
 
     %% main loop
     G --> H[SKPING送信]
