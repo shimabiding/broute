@@ -6,25 +6,29 @@ fileopen fh 'log.txt' 1
 
 ;ユーザーが設定する領域
 aliveInterval = 900 ;SKPINGで疎通確認する頻度を[s]で指定
-rbid = 'rbid' ;32桁の数字
-pwd = 'pwd' ;何桁かの文字列
-addr = 'smame addr' ;接続先のipv6アドレス
+rbid = 'dummy' ;32桁の数字
+pwd = 'dummy' ;何桁かの文字列
+addr = 'dummy' ;接続先のipv6アドレス
 channel = ''
 panid = ''
 ;ユーザーが設定する領域ここまで
 
-send 'SKSETPWD C ' pwd '\r\n'
-send 'SKSETRBID ' rbid '\r\n'
+send 'SKSETPWD C ' pwd
+sendln
+sendln
+send 'SKSETRBID ' rbid
+sendln
 
 sendln 'If you want to scan a your smame, you have to input **scan**'
 sendln 'If you had scaned, please input **f**'
-waitregex '^scan\n' '^f\n'
+waitregex '^scan\n' '^f\r'
 if result == 1 call Scan
 
 :mainLoop
 timeout = 0
-send 'SKPING 0 ' addr '\r\n'
-wait 'OK' 'EVENT 24' 'EVENT 29' 'ERXUDP'
+send 'SKPING 0 ' addr
+sendln
+wait 'EPONG' 'EVENT 24' 'EVENT 29' 'ERXUDP'
 if result == 1 timeout = aliveInterval
 if result == 2 call Join
 if result == 3 call Event29
@@ -40,7 +44,8 @@ end
 
 
 :Scan
-send 'SKSCAN 3 FFFFFFFF 6 0\r\n'
+send 'SKSCAN 3 FFFFFFFF 6 0'
+sendln
 addr = '  Addr:'
 wait '  Addr:'
 strtrim inputstr addr
@@ -60,9 +65,12 @@ call StructFrame
 call SkSendTo
 wait TID
 timeout = prevTO
-strmatch inputstr '1081\h{4}02880105FF017201E704(\h{8})'
-sprintf2 p 'InstantPower: %d' groupmatchstr1
+strmatch inputstr '.*1081\h{4}02880105FF017201E704(\h{8})'
+sendln result
+str2int gp1 groupmatchstr1
+sprintf2 p 'InstantPower: %d' gp1
 sendln p
+sendln
 return
 
 
@@ -99,7 +107,7 @@ for i 0 lenByte-1
     str2int bin strbin
     sendbinary bin
 next
-send '\r\n'
+sendln
 return
 
 
